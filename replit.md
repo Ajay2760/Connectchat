@@ -85,8 +85,34 @@ The application is configured for deployment on Replit with the following setup:
 3. Static assets are served by Express in production
 4. Environment variables manage database connections and build modes
 
+## Recent Changes
+- June 20, 2025: Added exit button functionality to leave chat sessions
+- June 20, 2025: Implemented friend discovery system for finding and chatting with online users
+- June 20, 2025: Created music rooms feature for listening to songs together with friends
+- June 20, 2025: Enhanced chat interface with three tabs: Direct chats, Groups, and Music rooms
+- June 20, 2025: Added comprehensive friend interaction features and explanations
+
+## Key Features Added
+### Friend Discovery System
+- "Find Friends" button in Direct tab to discover online users
+- Real-time friend search and instant chat initiation
+- Clear explanation of how to chat with friends in the welcome screen
+
+### Music Rooms
+- Dedicated music rooms for listening to songs together
+- Song sharing functionality with URL support (YouTube, Spotify, etc.)
+- Special music-themed UI with purple/pink gradients
+- Separate tab for music room management
+
+### Enhanced User Experience
+- Exit button (red logout icon) to leave the application
+- Improved welcome screen with feature explanations
+- Real-time online status indicators for friends
+- Better visual distinction between chat types
+
 ## Changelog
 - June 20, 2025. Initial setup
+- June 20, 2025. Enhanced with friend discovery and music features
 
 ## User Preferences
 

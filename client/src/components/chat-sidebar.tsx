@@ -1,19 +1,22 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useTheme } from "@/components/theme-provider";
 import { CreateGroupModal } from "@/components/create-group-modal";
-import { MessageCircle, Users, UserPlus, Search, Plus, Moon, Sun } from "lucide-react";
+import { FriendDiscoveryModal } from "./friend-discovery-modal";
+import { MessageCircle, Users, UserPlus, Search, Plus, Moon, Sun, LogOut, Music } from "lucide-react";
 import type { User, ChatWithMembers } from "@shared/schema";
 
 interface ChatSidebarProps {
   currentUser: User;
-  activeTab: "direct" | "groups";
-  onTabChange: (tab: "direct" | "groups") => void;
+  activeTab: "direct" | "groups" | "music";
+  onTabChange: (tab: "direct" | "groups" | "music") => void;
   onChatSelect: (chat: ChatWithMembers) => void;
+  onStartDirectChat: (user: User) => void;
   activeChatId?: number;
 }
 
@@ -22,11 +25,15 @@ export function ChatSidebar({
   activeTab, 
   onTabChange, 
   onChatSelect, 
+  onStartDirectChat,
   activeChatId 
 }: ChatSidebarProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [showCreateGroup, setShowCreateGroup] = useState(false);
+  const [showCreateMusic, setShowCreateMusic] = useState(false);
+  const [showFriendDiscovery, setShowFriendDiscovery] = useState(false);
   const { theme, toggleTheme } = useTheme();
+  const [, setLocation] = useLocation();
 
   const { data: chats = [] } = useQuery<ChatWithMembers[]>({
     queryKey: ["/api/users/" + currentUser.id + "/chats"],
@@ -38,17 +45,37 @@ export function ChatSidebar({
 
   const directChats = chats.filter(chat => chat.type === "direct");
   const groupChats = chats.filter(chat => chat.type === "group");
+  const musicChats = chats.filter(chat => chat.type === "music");
 
-  const filteredChats = (activeTab === "direct" ? directChats : groupChats).filter(chat => {
-    if (!searchQuery) return true;
+  const getFilteredChats = () => {
+    let targetChats: ChatWithMembers[] = [];
+    if (activeTab === "direct") targetChats = directChats;
+    else if (activeTab === "groups") targetChats = groupChats;
+    else if (activeTab === "music") targetChats = musicChats;
     
-    if (chat.type === "direct") {
-      const otherMember = chat.members.find(m => m.userId !== currentUser.id);
-      return otherMember?.user.username.toLowerCase().includes(searchQuery.toLowerCase());
-    } else {
-      return chat.name?.toLowerCase().includes(searchQuery.toLowerCase());
-    }
-  });
+    return targetChats.filter(chat => {
+      if (!searchQuery) return true;
+      
+      if (chat.type === "direct") {
+        const otherMember = chat.members.find(m => m.userId !== currentUser.id);
+        return otherMember?.user.username.toLowerCase().includes(searchQuery.toLowerCase());
+      } else {
+        return chat.name?.toLowerCase().includes(searchQuery.toLowerCase());
+      }
+    });
+  };
+
+  const filteredChats = getFilteredChats();
+
+  const handleExit = () => {
+    localStorage.removeItem("currentUser");
+    setLocation("/");
+  };
+
+  const handleStartDirectChat = (user: User) => {
+    onStartDirectChat(user);
+    setShowFriendDiscovery(false);
+  };
 
   const getAvatarContent = (chat: ChatWithMembers) => {
     if (chat.type === "direct") {
@@ -110,9 +137,14 @@ export function ChatSidebar({
               <p className="text-sm text-gray-500 dark:text-gray-400">Welcome, {currentUser.username}!</p>
             </div>
           </div>
-          <Button variant="ghost" size="icon" onClick={toggleTheme}>
-            {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          </Button>
+          <div className="flex items-center space-x-1">
+            <Button variant="ghost" size="icon" onClick={toggleTheme}>
+              {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </Button>
+            <Button variant="ghost" size="icon" onClick={handleExit} className="text-red-500 hover:text-red-600">
+              <LogOut className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
         
         {/* Search */}
@@ -154,11 +186,33 @@ export function ChatSidebar({
           <Users className="w-4 h-4 mr-2" />
           Groups
         </Button>
+        <Button
+          variant="ghost"
+          className={`flex-1 py-3 px-4 text-sm font-medium border-b-2 rounded-none ${
+            activeTab === "music"
+              ? "border-primary text-primary"
+              : "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+          }`}
+          onClick={() => onTabChange("music")}
+        >
+          <Music className="w-4 h-4 mr-2" />
+          Music
+        </Button>
       </div>
       
-      {/* Create Group Button */}
-      {activeTab === "groups" && (
-        <div className="p-3 border-b border-gray-200 dark:border-slate-700">
+      {/* Action Buttons */}
+      <div className="p-3 border-b border-gray-200 dark:border-slate-700">
+        {activeTab === "direct" && (
+          <Button 
+            onClick={() => setShowFriendDiscovery(true)}
+            className="w-full"
+            size="sm"
+          >
+            <UserPlus className="w-4 h-4 mr-2" />
+            Find Friends
+          </Button>
+        )}
+        {activeTab === "groups" && (
           <Button 
             onClick={() => setShowCreateGroup(true)}
             className="w-full"
@@ -167,14 +221,26 @@ export function ChatSidebar({
             <Plus className="w-4 h-4 mr-2" />
             Create Group
           </Button>
-        </div>
-      )}
+        )}
+        {activeTab === "music" && (
+          <Button 
+            onClick={() => setShowCreateMusic(true)}
+            className="w-full"
+            size="sm"
+          >
+            <Music className="w-4 h-4 mr-2" />
+            Create Music Room
+          </Button>
+        )}
+      </div>
       
       {/* Chat List */}
       <div className="flex-1 overflow-y-auto">
         {filteredChats.length === 0 ? (
           <div className="p-4 text-center text-gray-500 dark:text-gray-400">
-            {activeTab === "direct" ? "No direct chats yet" : "No groups yet"}
+            {activeTab === "direct" && "No direct chats yet"}
+            {activeTab === "groups" && "No groups yet"}
+            {activeTab === "music" && "No music rooms yet"}
           </div>
         ) : (
           filteredChats.map((chat) => (
@@ -227,6 +293,22 @@ export function ChatSidebar({
         onOpenChange={setShowCreateGroup}
         currentUser={currentUser}
         onlineUsers={onlineUsers}
+        roomType="group"
+      />
+      
+      <CreateGroupModal
+        open={showCreateMusic}
+        onOpenChange={setShowCreateMusic}
+        currentUser={currentUser}
+        onlineUsers={onlineUsers}
+        roomType="music"
+      />
+      
+      <FriendDiscoveryModal
+        open={showFriendDiscovery}
+        onOpenChange={setShowFriendDiscovery}
+        currentUser={currentUser}
+        onStartChat={handleStartDirectChat}
       />
     </div>
   );

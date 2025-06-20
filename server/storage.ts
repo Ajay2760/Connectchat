@@ -108,9 +108,14 @@ export class MemStorage implements IStorage {
     const id = this.currentChatId++;
     const now = new Date();
     const newChat: Chat = { 
-      ...chat, 
       id, 
-      createdAt: now 
+      name: chat.name || null,
+      type: chat.type,
+      createdBy: chat.createdBy,
+      createdAt: now,
+      currentSong: null,
+      songUrl: null,
+      isPlaying: false
     };
     this.chats.set(id, newChat);
     

@@ -16,13 +16,15 @@ interface CreateGroupModalProps {
   onOpenChange: (open: boolean) => void;
   currentUser: User;
   onlineUsers: User[];
+  roomType?: "group" | "music";
 }
 
 export function CreateGroupModal({ 
   open, 
   onOpenChange, 
   currentUser, 
-  onlineUsers 
+  onlineUsers,
+  roomType = "group"
 }: CreateGroupModalProps) {
   const [groupName, setGroupName] = useState("");
   const [selectedMembers, setSelectedMembers] = useState<number[]>([]);
@@ -33,7 +35,7 @@ export function CreateGroupModal({
     mutationFn: async ({ name, memberIds }: { name: string; memberIds: number[] }) => {
       const response = await apiRequest("POST", "/api/chats", {
         name,
-        type: "group",
+        type: roomType,
         createdBy: currentUser.id,
         memberIds,
       });
@@ -42,7 +44,7 @@ export function CreateGroupModal({
     onSuccess: () => {
       toast({
         title: "Success",
-        description: "Group created successfully!",
+        description: roomType === "music" ? "Music room created successfully!" : "Group created successfully!",
       });
       queryClient.invalidateQueries({
         queryKey: ["/api/users/" + currentUser.id + "/chats"]
@@ -52,7 +54,7 @@ export function CreateGroupModal({
     onError: (error: any) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to create group",
+        description: error.message || `Failed to create ${roomType}`,
         variant: "destructive",
       });
     },
@@ -78,7 +80,7 @@ export function CreateGroupModal({
     if (!groupName.trim()) {
       toast({
         title: "Error",
-        description: "Please enter a group name",
+        description: roomType === "music" ? "Please enter a music room name" : "Please enter a group name",
         variant: "destructive",
       });
       return;
@@ -106,7 +108,9 @@ export function CreateGroupModal({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <div className="flex items-center justify-between">
-            <DialogTitle>Create New Group</DialogTitle>
+            <DialogTitle>
+              {roomType === "music" ? "Create Music Room" : "Create New Group"}
+            </DialogTitle>
             <Button
               variant="ghost"
               size="icon"
@@ -119,11 +123,13 @@ export function CreateGroupModal({
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="groupName">Group Name</Label>
+            <Label htmlFor="groupName">
+              {roomType === "music" ? "Music Room Name" : "Group Name"}
+            </Label>
             <Input
               id="groupName"
               type="text"
-              placeholder="Enter group name"
+              placeholder={roomType === "music" ? "Enter music room name" : "Enter group name"}
               value={groupName}
               onChange={(e) => setGroupName(e.target.value)}
               disabled={createGroupMutation.isPending}
@@ -175,7 +181,11 @@ export function CreateGroupModal({
               className="flex-1"
               disabled={createGroupMutation.isPending}
             >
-              {createGroupMutation.isPending ? "Creating..." : "Create Group"}
+              {createGroupMutation.isPending 
+                ? "Creating..." 
+                : roomType === "music" 
+                  ? "Create Music Room" 
+                  : "Create Group"}
             </Button>
           </div>
         </form>

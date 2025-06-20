@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChatSidebar } from "@/components/chat-sidebar";
 import { ChatArea } from "@/components/chat-area";
+import { MusicRoom } from "@/components/music-room";
 import { usePolling } from "@/hooks/use-polling";
 import { apiRequest } from "@/lib/queryClient";
 import type { User, ChatWithMembers } from "@shared/schema";
@@ -10,7 +11,7 @@ import type { User, ChatWithMembers } from "@shared/schema";
 export default function Chat() {
   const [, setLocation] = useLocation();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [activeTab, setActiveTab] = useState<"direct" | "groups">("direct");
+  const [activeTab, setActiveTab] = useState<"direct" | "groups" | "music">("direct");
   const [activeChat, setActiveChat] = useState<ChatWithMembers | null>(null);
   const queryClient = useQueryClient();
 
@@ -93,18 +94,35 @@ export default function Chat() {
           activeTab={activeTab}
           onTabChange={setActiveTab}
           onChatSelect={handleChatSelect}
+          onStartDirectChat={handleStartDirectChat}
           activeChatId={activeChat?.id}
         />
         {activeChat ? (
-          <ChatArea
-            currentUser={currentUser}
-            activeChat={activeChat}
-          />
+          activeChat.type === "music" ? (
+            <MusicRoom
+              currentUser={currentUser}
+              activeChat={activeChat}
+            />
+          ) : (
+            <ChatArea
+              currentUser={currentUser}
+              activeChat={activeChat}
+            />
+          )
         ) : (
           <div className="flex-1 flex items-center justify-center bg-gray-50 dark:bg-slate-900">
             <div className="text-center text-gray-500 dark:text-gray-400">
               <h2 className="text-2xl font-semibold mb-2">Welcome to Connect</h2>
               <p>Select a chat to start messaging</p>
+              <div className="mt-6 text-sm">
+                <p className="mb-2">How to chat with friends:</p>
+                <div className="space-y-1 text-gray-400">
+                  <p>• Click "Find Friends" to discover online users</p>
+                  <p>• Start direct conversations instantly</p>
+                  <p>• Create group chats for multiple friends</p>
+                  <p>• Join music rooms to listen together</p>
+                </div>
+              </div>
             </div>
           </div>
         )}

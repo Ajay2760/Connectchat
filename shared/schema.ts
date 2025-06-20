@@ -12,9 +12,12 @@ export const users = pgTable("users", {
 export const chats = pgTable("chats", {
   id: serial("id").primaryKey(),
   name: text("name"),
-  type: text("type").notNull(), // 'direct' or 'group'
+  type: text("type").notNull(), // 'direct', 'group', or 'music'
   createdBy: integer("created_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  currentSong: text("current_song"), // For music rooms
+  songUrl: text("song_url"), // For music rooms
+  isPlaying: boolean("is_playing").default(false), // For music rooms
 });
 
 export const chatMembers = pgTable("chat_members", {
